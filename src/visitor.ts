@@ -206,13 +206,13 @@ export class Visitor{
 
 	protected VisitAndExpression(node:Token, context:any){
 		this.Visit(node.value.left, context);
-		this.where += " AND ";
+        this.where += !context.any ? " AND " : ", ";
 		this.Visit(node.value.right, context);
 	}
 
 	protected VisitOrExpression(node:Token, context:any){
 		this.Visit(node.value.left, context);
-		this.where += " OR ";
+        this.where += !context.any ? " OR " : ", ";
 		this.Visit(node.value.right, context);
 	}
 
@@ -222,12 +222,24 @@ export class Visitor{
 		this.where += ")";
 	}
 
+    protect
+
 	protected VisitCommonExpression(node:Token, context:any){
 		this.Visit(node.value, context);
 	}
 
-	protected VisitFirstMemberExpression(node:Token, context:any){
-		this.Visit(node.value, context);
+    protected VisitFirstMemberExpression(node: Token, context: any) {
+        if (Array.isArray(node.value)) {
+            for(let i = 0; i < node.value.length; i++) {
+                this.Visit(node.value[i], context);
+                if (i != node.value.length-1) {
+                    this.where += `.`;
+                }
+            }
+        }
+        else {
+            this.Visit(node.value, context);
+        }
 	}
 
 	protected VisitMemberExpression(node:Token, context:any){
@@ -239,7 +251,7 @@ export class Visitor{
 			this.Visit(node.value.current, context);
 			context.identifier += ".";
 			this.Visit(node.value.next, context);
-		}else this.Visit(node.value, context);
+		} else this.Visit(node.value, context);
 	}
 
 	protected VisitSingleNavigationExpression(node:Token, context:any){
@@ -307,7 +319,7 @@ export class Visitor{
 			context.literal = value;
 			this.parameters.set(name, value);
 			this.where += "?";
-		}else this.where += (context.literal = SQLLiteral.convert(node.value, node.raw));
+		} else this.where += (context.literal = SQLLiteral.convert(node.value, node.raw));
 	}
 
 	protected VisitMethodCallExpression(node:Token, context:any){
@@ -408,4 +420,39 @@ export class Visitor{
 		}
 	}
 
+    protected VisitInExpression(node: Token, context: any) {
+		this.Visit(node.value.left, context);
+		this.where += " IN (";
+		this.Visit(node.value.right, context);
+		this.where += ")";
+	}
+
+    protected VisitParenExpression(node: Token, context: any) {
+        this.Visit(node.value, context);
+    }
+
+    protected VisitCollectionPathExpression(node: Token, context: any) {
+        this.Visit(node.value, context);
+    }
+    protected VisitAnyExpression(node: Token, context: any) {
+        debugger;
+        this.Visit(node.value.variable, context);
+        context.any = true;
+        const arrayType = node.raw.match(/ or | and /g);
+        const hasProp = node.raw.split(' ')[0].includes('/');
+        if (hasProp) {
+            this.Visit(node.value.predicate, context);
+            console.log('blarg');
+        } else {
+            this.where += arrayType ? " IN(array[" : " IN(";
+            this.Visit(node.value.predicate, context);
+            this.where += arrayType ? "])" : ")";
+        }
+    }
+    protected VisitLambdaPredicateExpression(node: Token, context: any) {
+        this.Visit(node.value, context);
+    }
+    protected VisitLambdaVariableExpression(node: Token, context: any) {
+        // TODO handle node.name
+    }
 }
