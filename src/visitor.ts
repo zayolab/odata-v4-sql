@@ -222,8 +222,6 @@ export class Visitor{
 		this.where += ")";
 	}
 
-    protect
-
 	protected VisitCommonExpression(node:Token, context:any){
 		this.Visit(node.value, context);
 	}
@@ -435,7 +433,6 @@ export class Visitor{
         this.Visit(node.value, context);
     }
     protected VisitAnyExpression(node: Token, context: any) {
-        debugger;
         this.Visit(node.value.variable, context);
         context.any = true;
         const arrayType = node.raw.match(/ or | and /g);
